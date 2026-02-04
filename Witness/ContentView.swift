@@ -87,6 +87,12 @@ struct ContentView: View {
             .task {
                 // Check for upgrades on launch
                 await witnessManager.checkPendingUpgrades(items: items, context: modelContext)
+                // Update widget
+                WidgetService.shared.updateWidget(items: items)
+            }
+            .onChange(of: items) { _, newItems in
+                // Update widget when items change
+                WidgetService.shared.updateWidget(items: newItems)
             }
             .refreshable {
                 await witnessManager.checkPendingUpgrades(items: items, context: modelContext)

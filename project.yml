@@ -42,6 +42,8 @@ targets:
     dependencies:
       - target: WitnessShareExtension
         embed: true
+      - target: WitnessWidget
+        embed: true
     info:
       path: Witness/Info.plist
       properties:
@@ -101,3 +103,33 @@ targets:
               NSExtensionActivationSupportsImageWithMaxCount: 1
               NSExtensionActivationSupportsText: true
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
+
+  WitnessWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: WitnessWidget
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.makiavel.witness.widget
+        INFOPLIST_FILE: WitnessWidget/Info.plist
+        SKIP_INSTALL: true
+        CODE_SIGN_ENTITLEMENTS: WitnessWidget/WitnessWidget.entitlements
+        ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME: WidgetBackground
+    entitlements:
+      path: WitnessWidget/WitnessWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.makiavel.witness
+    info:
+      path: WitnessWidget/Info.plist
+      properties:
+        CFBundleName: Witness Widget
+        CFBundleDisplayName: Witness
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundlePackageType: XPC!
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension

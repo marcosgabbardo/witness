@@ -14,12 +14,15 @@
 		35044E01077E4A3934FE73F2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A51C94E363B6DF7C1E1E0F9 /* SettingsView.swift */; };
 		37DBE994A1ECCDB44CB0DA78 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D52A1D013867803673B67A49 /* Localizable.strings */; };
 		54032541E9FA2BBB599C54CB /* WitnessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A5F267CA7B824D1FE17019 /* WitnessManager.swift */; };
+		679ACFCB668FE7295460BBE5 /* WitnessWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 49B8960CA1598F2CA99D5981 /* WitnessWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6DF4F4B0FE44F57F8CAC0CB7 /* ItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74AF75B0FF5C0C6E7857509B /* ItemDetailView.swift */; };
 		93522736B95291B0F8DC9DA2 /* WitnessApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8997FA9760B115038B506E /* WitnessApp.swift */; };
+		93B89B59278E005C447BF7DD /* WidgetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD778D23B1C86D2B880DEEB /* WidgetService.swift */; };
 		98E1AE5F489711E341E4E3ED /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F617406DBFE116D7A731954 /* ShareViewController.swift */; };
 		99ED464613173EB701702A30 /* StorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B718979A16D37546765FA04E /* StorageService.swift */; };
 		BECF8D9D1023ED98383D8F41 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB666369082B1950BA87A75 /* NotificationService.swift */; };
 		C81686F3B2F97F1526B39305 /* CreateTimestampView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E58B10B38FF73E83504DE534 /* CreateTimestampView.swift */; };
+		D93778FA0F954653723E972B /* WitnessWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987E90149057B22EC72FD0B2 /* WitnessWidget.swift */; };
 		E4A0849CE4B1132427434FED /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E4E34287D3F0D856FF79C1 /* OnboardingView.swift */; };
 /* End PBXBuildFile section */
 
@@ -31,6 +34,13 @@
 			remoteGlobalIDString = 9CFF8F53E21B40812F252AC6;
 			remoteInfo = WitnessShareExtension;
 		};
+		373B28FDEA52B6A5DDFBD428 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5DE08BFC18210C8548FE82D8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5C8F59C3E03DDD87B532393B;
+			remoteInfo = WitnessWidget;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -41,6 +51,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				1D80B9DF51BB95689BD5417B /* WitnessShareExtension.appex in Embed Foundation Extensions */,
+				679ACFCB668FE7295460BBE5 /* WitnessWidget.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -57,16 +68,21 @@
 		366772C19740FCBA0405BC27 /* WitnessShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WitnessShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3867F22ADF96373A6D01F275 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3F617406DBFE116D7A731954 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		3FD778D23B1C86D2B880DEEB /* WidgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetService.swift; sourceTree = "<group>"; };
+		49B8960CA1598F2CA99D5981 /* WitnessWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WitnessWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		5298319904DF8C8B59B964D7 /* WitnessShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WitnessShareExtension.entitlements; sourceTree = "<group>"; };
 		65A5F267CA7B824D1FE17019 /* WitnessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WitnessManager.swift; sourceTree = "<group>"; };
 		74AF75B0FF5C0C6E7857509B /* ItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailView.swift; sourceTree = "<group>"; };
 		7A155D1F24DDB79ABBAEE9BE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8486C855EE6F4FD17E4D8B31 /* WitnessWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WitnessWidget.entitlements; sourceTree = "<group>"; };
 		8A51C94E363B6DF7C1E1E0F9 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		987E90149057B22EC72FD0B2 /* WitnessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WitnessWidget.swift; sourceTree = "<group>"; };
 		A3797E77A23D989198AEA238 /* WitnessItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WitnessItem.swift; sourceTree = "<group>"; };
 		B718979A16D37546765FA04E /* StorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageService.swift; sourceTree = "<group>"; };
 		BE50D7E130B16B1AA9E59158 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		D68E6F1AF62378618E2888CA /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		E3E4E34287D3F0D856FF79C1 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		E47E05C83B151464DE5A7793 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		E58B10B38FF73E83504DE534 /* CreateTimestampView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTimestampView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -93,6 +109,7 @@
 				0EB666369082B1950BA87A75 /* NotificationService.swift */,
 				10FC4EB5CE6557A6EF64B82D /* OpenTimestampsService.swift */,
 				B718979A16D37546765FA04E /* StorageService.swift */,
+				3FD778D23B1C86D2B880DEEB /* WidgetService.swift */,
 				65A5F267CA7B824D1FE17019 /* WitnessManager.swift */,
 			);
 			path = Services;
@@ -130,6 +147,7 @@
 			children = (
 				5D26D896382E9B55A14C1DDF /* Witness */,
 				FB1788B2E84968CEEB0340C5 /* WitnessShareExtension */,
+				EFCE4F8048C8375370863FB9 /* WitnessWidget */,
 				98639BA6528D395635163C41 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -139,6 +157,7 @@
 			children = (
 				003C9498EA506F48F2E4ECF9 /* Witness.app */,
 				366772C19740FCBA0405BC27 /* WitnessShareExtension.appex */,
+				49B8960CA1598F2CA99D5981 /* WitnessWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -148,6 +167,16 @@
 			children = (
 			);
 			path = Extensions;
+			sourceTree = "<group>";
+		};
+		EFCE4F8048C8375370863FB9 /* WitnessWidget */ = {
+			isa = PBXGroup;
+			children = (
+				E47E05C83B151464DE5A7793 /* Info.plist */,
+				8486C855EE6F4FD17E4D8B31 /* WitnessWidget.entitlements */,
+				987E90149057B22EC72FD0B2 /* WitnessWidget.swift */,
+			);
+			path = WitnessWidget;
 			sourceTree = "<group>";
 		};
 		FB1788B2E84968CEEB0340C5 /* WitnessShareExtension */ = {
@@ -163,6 +192,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		5C8F59C3E03DDD87B532393B /* WitnessWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E98153DB5227C5069DA824B0 /* Build configuration list for PBXNativeTarget "WitnessWidget" */;
+			buildPhases = (
+				8F2E8E668ED460108A3FC58A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WitnessWidget;
+			packageProductDependencies = (
+			);
+			productName = WitnessWidget;
+			productReference = 49B8960CA1598F2CA99D5981 /* WitnessWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		8926EE529F16A78EF6D2B226 /* Witness */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2F2E6B6EA3D2685FCD451820 /* Build configuration list for PBXNativeTarget "Witness" */;
@@ -175,6 +221,7 @@
 			);
 			dependencies = (
 				17A5B9B05F401090572D08F6 /* PBXTargetDependency */,
+				F92EBFF6E4A79A0D0666B8B1 /* PBXTargetDependency */,
 			);
 			name = Witness;
 			packageProductDependencies = (
@@ -209,6 +256,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					5C8F59C3E03DDD87B532393B = {
+						DevelopmentTeam = 84P86W64VJ;
+						ProvisioningStyle = Automatic;
+					};
 					8926EE529F16A78EF6D2B226 = {
 						DevelopmentTeam = 84P86W64VJ;
 						ProvisioningStyle = Automatic;
@@ -236,6 +287,7 @@
 			targets = (
 				8926EE529F16A78EF6D2B226 /* Witness */,
 				9CFF8F53E21B40812F252AC6 /* WitnessShareExtension */,
+				5C8F59C3E03DDD87B532393B /* WitnessWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -252,6 +304,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		8F2E8E668ED460108A3FC58A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D93778FA0F954653723E972B /* WitnessWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C178493F1314F0FB0F44ECB4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -272,6 +332,7 @@
 				287DF5FA980F2D8B4AECE5E2 /* OpenTimestampsService.swift in Sources */,
 				35044E01077E4A3934FE73F2 /* SettingsView.swift in Sources */,
 				99ED464613173EB701702A30 /* StorageService.swift in Sources */,
+				93B89B59278E005C447BF7DD /* WidgetService.swift in Sources */,
 				93522736B95291B0F8DC9DA2 /* WitnessApp.swift in Sources */,
 				10D5570A5837BBF777CF5032 /* WitnessItem.swift in Sources */,
 				54032541E9FA2BBB599C54CB /* WitnessManager.swift in Sources */,
@@ -285,6 +346,11 @@
 			isa = PBXTargetDependency;
 			target = 9CFF8F53E21B40812F252AC6 /* WitnessShareExtension */;
 			targetProxy = 05329210EDDFE71128119BD8 /* PBXContainerItemProxy */;
+		};
+		F92EBFF6E4A79A0D0666B8B1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5C8F59C3E03DDD87B532393B /* WitnessWidget */;
+			targetProxy = 373B28FDEA52B6A5DDFBD428 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -387,6 +453,24 @@
 				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
+		};
+		711B02B7924C6CA89F430996 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = WitnessWidget/WitnessWidget.entitlements;
+				INFOPLIST_FILE = WitnessWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.makiavel.witness.widget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
 		};
 		967CA31C74085D9AABA4330C /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -502,6 +586,24 @@
 			};
 			name = Debug;
 		};
+		E4BF9D30CA3E63FF7F21A699 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = WitnessWidget/WitnessWidget.entitlements;
+				INFOPLIST_FILE = WitnessWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.makiavel.witness.widget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -528,6 +630,15 @@
 			buildConfigurations = (
 				42E228111FCADAE792CCA7E3 /* Debug */,
 				A99EF3E3E26716F2AD788D18 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E98153DB5227C5069DA824B0 /* Build configuration list for PBXNativeTarget "WitnessWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E4BF9D30CA3E63FF7F21A699 /* Debug */,
+				711B02B7924C6CA89F430996 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
