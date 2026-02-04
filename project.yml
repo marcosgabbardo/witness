@@ -11,7 +11,8 @@ settings:
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     ENABLE_USER_SCRIPT_SANDBOXING: true
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: 84P86W64VJ
+    CODE_SIGN_STYLE: Automatic
 
 targets:
   Witness:
