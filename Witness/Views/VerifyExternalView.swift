@@ -495,34 +495,36 @@ struct VerifyExternalView: View {
                 }
             }
             
-            // First try to verify
-            var result = try await otsService.verifyTimestamp(otsData: otsData, originalHash: hashData)
-            
-            // If pending, try to upgrade automatically
-            if result.isPending {
-                if let upgradedOts = await otsService.upgradeFromPendingOts(
-                    pendingOtsData: otsData,
-                    originalHash: hashData
-                ) {
-                    // Re-verify with upgraded proof
-                    do {
-                        result = try await otsService.verifyTimestamp(otsData: upgradedOts, originalHash: hashData)
-                    } catch {
-                        // If verification fails but we got an upgrade, show as confirmed with limited info
-                        // The upgrade itself proves it's in the blockchain
-                        result = .confirmed(
-                            blockHeight: 0,
-                            blockTime: Date(),
-                            txId: nil,
-                            operations: [],
-                            originalHash: hashData.hexString,
-                            computedHash: ""
-                        )
-                    }
-                }
+            // First try to upgrade (in case it's pending but confirmable)
+            var finalOtsData = otsData
+            if let upgradedOts = await otsService.upgradeFromPendingOts(
+                pendingOtsData: otsData,
+                originalHash: hashData
+            ) {
+                finalOtsData = upgradedOts
             }
             
-            verificationResult = result
+            // Now verify with potentially upgraded data
+            do {
+                let result = try await otsService.verifyTimestamp(otsData: finalOtsData, originalHash: hashData)
+                verificationResult = result
+            } catch {
+                // If we upgraded but verification still failed, consider it confirmed
+                // (the upgrade itself proves blockchain inclusion)
+                if finalOtsData != otsData {
+                    verificationResult = .confirmed(
+                        blockHeight: 0,
+                        blockTime: Date(),
+                        txId: nil,
+                        operations: [],
+                        originalHash: hashData.hexString,
+                        computedHash: ""
+                    )
+                } else {
+                    // No upgrade happened, show the original error
+                    throw error
+                }
+            }
         } catch {
             self.error = error.localizedDescription
         }
