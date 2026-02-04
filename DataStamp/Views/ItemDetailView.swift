@@ -23,6 +23,7 @@ struct ItemDetailView: View {
     @State private var showingImportProof = false
     @State private var showingTagsEditor = false
     @State private var showingFolderPicker = false
+    @State private var isFetchingBlockInfo = false
     
     @Query(sort: \Folder.sortOrder) private var folders: [Folder]
     
@@ -235,7 +236,7 @@ struct ItemDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
             // Bitcoin blockchain info if confirmed
-            if item.isConfirmed, let blockHeight = item.bitcoinBlockHeight {
+            if item.isConfirmed {
                 VStack(alignment: .leading, spacing: 12) {
                     // Header
                     HStack {
@@ -255,48 +256,17 @@ struct ItemDetailView: View {
                     
                     Divider()
                     
-                    // Block Height - clickable
-                    Link(destination: URL(string: "https://blockstream.info/block-height/\(blockHeight)")!) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Block Height")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text("#\(formatBlockHeight(blockHeight))")
-                                    .font(.system(.body, design: .monospaced))
-                                    .fontWeight(.semibold)
-                            }
-                            Spacer()
-                            Image(systemName: "arrow.up.right.square")
-                                .foregroundStyle(.orange)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                    
-                    // Block Time
-                    if let blockTime = item.bitcoinBlockTime {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Block Time")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(blockTime.formatted(date: .abbreviated, time: .shortened))
-                                    .font(.subheadline)
-                            }
-                            Spacer()
-                        }
-                    }
-                    
-                    // Transaction ID - clickable
-                    if let txId = item.bitcoinTxId, !txId.isEmpty {
-                        Link(destination: URL(string: "https://blockstream.info/tx/\(txId)")!) {
+                    if let blockHeight = item.bitcoinBlockHeight {
+                        // Block Height - clickable
+                        Link(destination: URL(string: "https://blockstream.info/block-height/\(blockHeight)")!) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Transaction")
+                                    Text("Block Height")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
-                                    Text("\(txId.prefix(16))...\(txId.suffix(8))")
-                                        .font(.system(.caption, design: .monospaced))
+                                    Text("#\(formatBlockHeight(blockHeight))")
+                                        .font(.system(.body, design: .monospaced))
+                                        .fontWeight(.semibold)
                                 }
                                 Spacer()
                                 Image(systemName: "arrow.up.right.square")
@@ -304,6 +274,67 @@ struct ItemDetailView: View {
                             }
                         }
                         .foregroundStyle(.primary)
+                        
+                        // Block Time
+                        if let blockTime = item.bitcoinBlockTime {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Block Time")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(blockTime.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.subheadline)
+                                }
+                                Spacer()
+                            }
+                        }
+                        
+                        // Transaction ID - clickable
+                        if let txId = item.bitcoinTxId, !txId.isEmpty {
+                            Link(destination: URL(string: "https://blockstream.info/tx/\(txId)")!) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Transaction")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text("\(txId.prefix(16))...\(txId.suffix(8))")
+                                            .font(.system(.caption, design: .monospaced))
+                                    }
+                                    Spacer()
+                                    Image(systemName: "arrow.up.right.square")
+                                        .foregroundStyle(.orange)
+                                }
+                            }
+                            .foregroundStyle(.primary)
+                        }
+                    } else {
+                        // Block info not available - fetch button
+                        VStack(spacing: 8) {
+                            Text("Block details not available")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            
+                            Button {
+                                Task {
+                                    await fetchBlockInfo()
+                                }
+                            } label: {
+                                HStack {
+                                    if isFetchingBlockInfo {
+                                        ProgressView()
+                                            .tint(.orange)
+                                    } else {
+                                        Image(systemName: "arrow.clockwise")
+                                    }
+                                    Text("Fetch Block Info")
+                                }
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.orange)
+                            }
+                            .disabled(isFetchingBlockInfo)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
                     }
                 }
                 .padding()
@@ -563,6 +594,26 @@ struct ItemDetailView: View {
     }
     
     // MARK: - Helpers
+    
+    private func fetchBlockInfo() async {
+        isFetchingBlockInfo = true
+        defer { isFetchingBlockInfo = false }
+        
+        // Re-verify to get block info
+        do {
+            let result = try await manager.verifyTimestamp(item)
+            if result.isValid {
+                item.bitcoinBlockHeight = result.blockHeight
+                item.bitcoinBlockTime = result.blockTime
+                item.bitcoinTxId = result.txId
+                try? modelContext.save()
+                HapticManager.shared.success()
+            }
+        } catch {
+            self.error = error
+            showingError = true
+        }
+    }
     
     private func formatBlockHeight(_ height: Int) -> String {
         let formatter = NumberFormatter()
