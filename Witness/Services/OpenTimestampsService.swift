@@ -167,6 +167,123 @@ actor OpenTimestampsService {
         return nil
     }
     
+    /// Try to upgrade using the pending OTS data directly
+    /// This follows the pending attestation URL to get the Bitcoin proof
+    func upgradeFromPendingOts(pendingOtsData: Data, originalHash: Data) async -> Data? {
+        do {
+            let proof = try await merkleVerifier.parseOtsFile(pendingOtsData)
+            
+            // Find pending attestations
+            for attestation in proof.attestations {
+                guard case .pending(let calendarUrl) = attestation else { continue }
+                
+                // Compute the commitment hash by applying operations
+                var commitment = originalHash
+                for operation in proof.operations {
+                    commitment = applyOperationSimple(operation, to: commitment)
+                }
+                
+                // Try to get upgraded proof from calendar
+                let timestampUrl = "\(calendarUrl)/timestamp/\(commitment.hexString)"
+                print("   📡 Trying pending URL: \(timestampUrl)")
+                
+                guard let url = URL(string: timestampUrl) else { continue }
+                
+                var request = URLRequest(url: url)
+                request.httpMethod = "GET"
+                request.setValue("application/vnd.opentimestamps.v1", forHTTPHeaderField: "Accept")
+                request.timeoutInterval = 10
+                
+                guard let (data, response) = try? await session.data(for: request),
+                      let httpResponse = response as? HTTPURLResponse,
+                      httpResponse.statusCode == 200 else {
+                    print("   ❌ Failed to get from \(timestampUrl)")
+                    continue
+                }
+                
+                print("   📬 Got response: \(data.count) bytes")
+                
+                // Check if it has Bitcoin attestation
+                if containsBitcoinAttestation(data) {
+                    print("   ✅ Has Bitcoin attestation!")
+                    // Construct complete OTS with the upgraded proof
+                    return constructUpgradedOts(
+                        originalHash: originalHash,
+                        originalOperations: proof.operations,
+                        calendarResponse: data
+                    )
+                }
+            }
+        } catch {
+            print("   ❌ Parse error: \(error)")
+        }
+        
+        return nil
+    }
+    
+    private func applyOperationSimple(_ operation: OTSOperation, to data: Data) -> Data {
+        switch operation {
+        case .sha256:
+            return sha256(data: data)
+        case .append(let appendData):
+            return data + appendData
+        case .prepend(let prependData):
+            return prependData + data
+        default:
+            return data
+        }
+    }
+    
+    private func constructUpgradedOts(originalHash: Data, originalOperations: [OTSOperation], calendarResponse: Data) -> Data {
+        var ots = Data()
+        
+        // Magic header
+        ots.append(contentsOf: OTSConstants.magicHeader)
+        
+        // Version
+        ots.append(OTSConstants.versionByte)
+        
+        // Hash type (SHA256)
+        ots.append(OTSConstants.opSha256)
+        
+        // The original hash
+        ots.append(originalHash)
+        
+        // Original operations (if any)
+        for op in originalOperations {
+            switch op {
+            case .sha256:
+                ots.append(OTSConstants.opSha256)
+            case .append(let appendData):
+                ots.append(OTSConstants.opAppend)
+                ots.append(contentsOf: encodeVarInt(UInt64(appendData.count)))
+                ots.append(appendData)
+            case .prepend(let prependData):
+                ots.append(OTSConstants.opPrepend)
+                ots.append(contentsOf: encodeVarInt(UInt64(prependData.count)))
+                ots.append(prependData)
+            default:
+                break
+            }
+        }
+        
+        // Calendar response (contains the Bitcoin attestation path)
+        ots.append(calendarResponse)
+        
+        return ots
+    }
+    
+    private func encodeVarInt(_ value: UInt64) -> [UInt8] {
+        var result: [UInt8] = []
+        var v = value
+        while v >= 0x80 {
+            result.append(UInt8(v & 0x7f) | 0x80)
+            v >>= 7
+        }
+        result.append(UInt8(v))
+        return result
+    }
+    
     /// Verify an .ots proof against the Bitcoin blockchain
     func verifyTimestamp(otsData: Data, originalHash: Data) async throws -> VerificationResult {
         // Parse the .ots file

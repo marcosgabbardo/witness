@@ -205,9 +205,19 @@ final class WitnessManager {
             print("   Result: \(upgradedOts != nil ? "got data (\(upgradedOts!.count) bytes)" : "nil")")
         }
         
-        // If original calendar didn't work, try all calendars
+        // If original calendar didn't work, try using the pending OTS data
+        if upgradedOts == nil, let pendingOts = item.pendingOtsData {
+            print("   Trying to upgrade from pending OTS data...")
+            upgradedOts = await otsService.upgradeFromPendingOts(
+                pendingOtsData: pendingOts,
+                originalHash: item.contentHash
+            )
+            print("   Result: \(upgradedOts != nil ? "got data (\(upgradedOts!.count) bytes)" : "nil")")
+        }
+        
+        // If still nil, try all calendars with original hash
         if upgradedOts == nil {
-            print("   Trying all calendars...")
+            print("   Trying all calendars with original hash...")
             upgradedOts = await otsService.upgradeTimestampFromAnyCalendar(hash: item.contentHash)
             print("   Result: \(upgradedOts != nil ? "got data (\(upgradedOts!.count) bytes)" : "nil")")
         }
