@@ -184,41 +184,64 @@ final class WitnessManager {
     
     /// Try to upgrade a pending timestamp to confirmed
     func upgradeTimestamp(_ item: WitnessItem, context: ModelContext) async {
-        guard item.status == .submitted,
-              let calendarUrl = item.calendarUrl else { return }
+        guard item.status == .submitted else { return }
         
-        do {
-            if let upgradedOts = try await otsService.upgradeTimestamp(
+        // Try original calendar first, then all calendars
+        var upgradedOts: Data?
+        
+        if let calendarUrl = item.calendarUrl {
+            upgradedOts = try? await otsService.upgradeTimestamp(
                 hash: item.contentHash,
                 calendarUrl: calendarUrl
-            ) {
-                item.otsData = upgradedOts
-                item.status = .confirmed
-                item.confirmedAt = Date()
-                item.lastUpdated = Date()
-                
-                // Extract block info if possible
-                // For now, just mark as confirmed
-                
-                // Save updated proof
-                try await storageService.saveProof(upgradedOts, for: item.id)
-                try context.save()
-                
-                // Send notification and haptic
-                let displayTitle = item.displayTitle
-                let itemId = item.id
-                let blockHeight = item.bitcoinBlockHeight
-                await NotificationService.shared.notifyConfirmation(
-                    title: displayTitle,
-                    itemId: itemId,
-                    blockHeight: blockHeight
-                )
-                HapticManager.shared.timestampConfirmed()
+            )
+        }
+        
+        // If original calendar didn't work, try all calendars
+        if upgradedOts == nil {
+            upgradedOts = await otsService.upgradeTimestampFromAnyCalendar(hash: item.contentHash)
+        }
+        
+        guard let finalOts = upgradedOts else {
+            // Not ready yet
+            return
+        }
+        
+        // Update item with confirmed proof
+        item.otsData = finalOts
+        item.status = .confirmed
+        item.confirmedAt = Date()
+        item.lastUpdated = Date()
+        
+        // Try to extract block info
+        do {
+            let verificationResult = try await otsService.verifyTimestamp(
+                otsData: finalOts,
+                originalHash: item.contentHash
+            )
+            
+            if verificationResult.isValid {
+                item.bitcoinBlockHeight = verificationResult.blockHeight
+                item.bitcoinBlockTime = verificationResult.blockTime
+                item.bitcoinTxId = verificationResult.txId
             }
         } catch {
-            // Don't mark as failed - might just not be ready yet
-            print("Upgrade check failed: \(error)")
+            print("Could not extract block info: \(error)")
         }
+        
+        // Save updated proof
+        try? await storageService.saveProof(finalOts, for: item.id)
+        try? context.save()
+        
+        // Send notification and haptic
+        let displayTitle = item.displayTitle
+        let itemId = item.id
+        let blockHeight = item.bitcoinBlockHeight
+        await NotificationService.shared.notifyConfirmation(
+            title: displayTitle,
+            itemId: itemId,
+            blockHeight: blockHeight
+        )
+        HapticManager.shared.timestampConfirmed()
     }
     
     /// Check all pending items for upgrades

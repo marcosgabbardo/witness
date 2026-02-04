@@ -127,7 +127,9 @@ actor OpenTimestampsService {
         case 200:
             // Check if it contains Bitcoin attestation
             if containsBitcoinAttestation(data) {
-                return data
+                // Construct complete .ots file with Bitcoin attestation
+                let completeOts = constructOtsFile(hash: hash, calendarResponse: data, calendarUrl: calendarUrl)
+                return completeOts
             } else {
                 return nil // Still pending
             }
@@ -136,6 +138,20 @@ actor OpenTimestampsService {
         default:
             throw OTSError.invalidResponse(httpResponse.statusCode)
         }
+    }
+    
+    /// Try to upgrade from all known calendars (in case original calendar is down)
+    func upgradeTimestampFromAnyCalendar(hash: Data) async -> Data? {
+        for calendar in OTSCalendar.allCases {
+            do {
+                if let upgraded = try await upgradeTimestamp(hash: hash, calendarUrl: calendar.rawValue) {
+                    return upgraded
+                }
+            } catch {
+                continue // Try next calendar
+            }
+        }
+        return nil
     }
     
     /// Verify an .ots proof against the Bitcoin blockchain
