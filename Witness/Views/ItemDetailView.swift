@@ -21,8 +21,6 @@ struct ItemDetailView: View {
     @State private var showingError = false
     @State private var merkleTreeData: MerkleTreeData?
     @State private var showingImportProof = false
-    @State private var debugInfo: String?
-    @State private var showingDebugInfo = false
     
     private let merkleVerifier = MerkleVerifier()
     private let otsService = OpenTimestampsService()
@@ -114,28 +112,6 @@ struct ItemDetailView: View {
                 Button("OK") { }
             } message: {
                 Text(error?.localizedDescription ?? "Unknown error")
-            }
-            .sheet(isPresented: $showingDebugInfo) {
-                NavigationStack {
-                    ScrollView {
-                        Text(debugInfo ?? "No info")
-                            .font(.system(.caption, design: .monospaced))
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .navigationTitle("Debug Info")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { showingDebugInfo = false }
-                        }
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Copy") {
-                                UIPasteboard.general.string = debugInfo
-                            }
-                        }
-                    }
-                }
             }
             .sheet(item: $merkleTreeData) { data in
                 MerkleTreeView(
@@ -427,24 +403,7 @@ struct ItemDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 
-                // Debug button
-                Button {
-                    Task {
-                        debugInfo = await manager.getUpgradeDebugInfo(for: item)
-                        showingDebugInfo = true
-                    }
-                } label: {
-                    HStack {
-                        Image(systemName: "ant")
-                        Text("Debug Upgrade")
-                    }
-                    .font(.caption)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-            }
             
             // Share button
             Button {
