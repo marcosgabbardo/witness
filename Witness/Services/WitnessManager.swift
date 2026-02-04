@@ -258,7 +258,7 @@ final class WitnessManager {
         // Extract needed values on MainActor before calling actor
         let itemId = item.id
         let contentFileName = item.contentFileName
-        let hasOtsData = item.otsData != nil
+        let hasOtsData = item.otsData != nil || item.pendingOtsData != nil
         
         return try await storageService.createShareBundle(
             itemId: itemId,

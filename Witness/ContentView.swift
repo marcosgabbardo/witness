@@ -3,6 +3,7 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var syncService: CloudKitSyncService
     @Query(sort: \WitnessItem.createdAt, order: .reverse) private var items: [WitnessItem]
     
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
@@ -11,6 +12,7 @@ struct ContentView: View {
     @State private var showingCreateSheet = false
     @State private var showingOnboarding = false
     @State private var showingSettings = false
+    @State private var showingVerify = false
     @State private var selectedItem: WitnessItem?
     @State private var selectedFilter: ItemFilter = .all
     
@@ -18,17 +20,6 @@ struct ContentView: View {
         case all = "All"
         case pending = "Pending"
         case confirmed = "Confirmed"
-    }
-    
-    var filteredItems: [WitnessItem] {
-        switch selectedFilter {
-        case .all:
-            return items
-        case .pending:
-            return items.filter { $0.status == .pending || $0.status == .submitted }
-        case .confirmed:
-            return items.filter { $0.status == .confirmed || $0.status == .verified }
-        }
     }
     
     var body: some View {
@@ -58,26 +49,39 @@ struct ContentView: View {
                     } label: {
                         Image(systemName: "gearshape")
                     }
-                    .accessibilityLabel(A11yLabel.settings)
                 }
                 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        ForEach(ItemFilter.allCases, id: \.self) { filter in
-                            Button {
-                                selectedFilter = filter
-                            } label: {
-                                if selectedFilter == filter {
-                                    Label(filter.rawValue, systemImage: "checkmark")
-                                } else {
-                                    Text(filter.rawValue)
+                    HStack(spacing: 16) {
+                        Button {
+                            showingVerify = true
+                        } label: {
+                            Image(systemName: "checkmark.shield")
+                        }
+                        
+                        Menu {
+                            ForEach(ItemFilter.allCases, id: \.self) { filter in
+                                Button {
+                                    selectedFilter = filter
+                                } label: {
+                                    if selectedFilter == filter {
+                                        Label(filter.rawValue, systemImage: "checkmark")
+                                    } else {
+                                        Text(filter.rawValue)
+                                    }
                                 }
                             }
+                        } label: {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
                         }
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
                     }
                 }
+            }
+            .sheet(isPresented: $showingVerify) {
+                VerifyExternalView()
+            }
+            .refreshable {
+                await witnessManager.checkPendingUpgrades(items: items, context: modelContext)
             }
             .sheet(isPresented: $showingCreateSheet) {
                 CreateTimestampView(manager: witnessManager)
@@ -85,29 +89,24 @@ struct ContentView: View {
             .sheet(item: $selectedItem) { item in
                 ItemDetailView(item: item, manager: witnessManager)
             }
-            .task {
-                // Check for upgrades on launch
-                await witnessManager.checkPendingUpgrades(items: items, context: modelContext)
-                // Update widget
-                WidgetService.shared.updateWidget(items: items)
-            }
-            .onChange(of: items) { _, newItems in
-                // Update widget when items change
-                WidgetService.shared.updateWidget(items: newItems)
-            }
-            .refreshable {
-                await witnessManager.checkPendingUpgrades(items: items, context: modelContext)
-            }
             .sheet(isPresented: $showingOnboarding) {
                 OnboardingView()
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
+                    .environmentObject(syncService)
             }
             .onAppear {
                 if !hasSeenOnboarding {
                     showingOnboarding = true
                 }
+            }
+            .task {
+                // Check for upgrades on launch - safely
+                await witnessManager.checkPendingUpgrades(items: items, context: modelContext)
+            }
+            .onChange(of: items) { _, newItems in
+                WidgetService.shared.updateWidget(items: newItems)
             }
         }
     }
@@ -156,6 +155,17 @@ struct ContentView: View {
             .onDelete(perform: deleteItems)
         }
         .listStyle(.plain)
+    }
+    
+    private var filteredItems: [WitnessItem] {
+        switch selectedFilter {
+        case .all:
+            return items
+        case .pending:
+            return items.filter { $0.status == .pending || $0.status == .submitted }
+        case .confirmed:
+            return items.filter { $0.status == .confirmed || $0.status == .verified }
+        }
     }
     
     private var createButton: some View {
@@ -286,5 +296,6 @@ struct ItemRowCell: View {
 
 #Preview {
     ContentView()
+        .environmentObject(CloudKitSyncService())
         .modelContainer(for: WitnessItem.self, inMemory: true)
 }

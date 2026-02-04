@@ -104,7 +104,7 @@ actor NotificationService {
     // MARK: - Categories
     
     /// Register notification categories and actions
-    func registerCategories() {
+    nonisolated func registerCategories() {
         let viewAction = UNNotificationAction(
             identifier: "VIEW_ACTION",
             title: "View Details",

@@ -30,6 +30,7 @@
 		C81686F3B2F97F1526B39305 /* CreateTimestampView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E58B10B38FF73E83504DE534 /* CreateTimestampView.swift */; };
 		D93778FA0F954653723E972B /* WitnessWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987E90149057B22EC72FD0B2 /* WitnessWidget.swift */; };
 		E4A0849CE4B1132427434FED /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E4E34287D3F0D856FF79C1 /* OnboardingView.swift */; };
+		F739721BA618F61D50A0CBE3 /* VerifyExternalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D1932CF3FF2280503CEF83C /* VerifyExternalView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +83,7 @@
 		3383998352DAB47D6862D2EB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		366772C19740FCBA0405BC27 /* WitnessShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WitnessShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3867F22ADF96373A6D01F275 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		3D1932CF3FF2280503CEF83C /* VerifyExternalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifyExternalView.swift; sourceTree = "<group>"; };
 		3F617406DBFE116D7A731954 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		3FD778D23B1C86D2B880DEEB /* WidgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetService.swift; sourceTree = "<group>"; };
 		490ED391B95F7A4C01B9FBA1 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
@@ -145,6 +147,7 @@
 				74AF75B0FF5C0C6E7857509B /* ItemDetailView.swift */,
 				E3E4E34287D3F0D856FF79C1 /* OnboardingView.swift */,
 				8A51C94E363B6DF7C1E1E0F9 /* SettingsView.swift */,
+				3D1932CF3FF2280503CEF83C /* VerifyExternalView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -411,6 +414,7 @@
 				A568DD16D788D4BDEB909E4B /* PDFExportService.swift in Sources */,
 				35044E01077E4A3934FE73F2 /* SettingsView.swift in Sources */,
 				99ED464613173EB701702A30 /* StorageService.swift in Sources */,
+				F739721BA618F61D50A0CBE3 /* VerifyExternalView.swift in Sources */,
 				93B89B59278E005C447BF7DD /* WidgetService.swift in Sources */,
 				93522736B95291B0F8DC9DA2 /* WitnessApp.swift in Sources */,
 				10D5570A5837BBF777CF5032 /* WitnessItem.swift in Sources */,

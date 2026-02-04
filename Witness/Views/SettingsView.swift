@@ -20,8 +20,9 @@ struct SettingsView: View {
                             Text("iCloud Sync")
                         }
                     }
+                    .disabled(!syncService.isAvailable)
                     .onChange(of: iCloudSyncEnabled) { _, newValue in
-                        if newValue {
+                        if newValue && syncService.isAvailable {
                             Task {
                                 await syncService.sync()
                             }

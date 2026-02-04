@@ -417,6 +417,9 @@ struct ItemDetailView: View {
             shareURLs = try await manager.getShareURLs(for: item)
             if !shareURLs.isEmpty {
                 showingShareSheet = true
+            } else {
+                self.error = NSError(domain: "Witness", code: 0, userInfo: [NSLocalizedDescriptionKey: "No proof files found. The .ots file may not have been saved yet."])
+                showingError = true
             }
         } catch {
             self.error = error

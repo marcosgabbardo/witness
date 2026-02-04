@@ -4,7 +4,6 @@ import UserNotifications
 
 @main
 struct WitnessApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var syncService = CloudKitSyncService()
     
     let container: ModelContainer
@@ -17,7 +16,7 @@ struct WitnessApp: App {
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
                 isStoredInMemoryOnly: false,
-                cloudKitDatabase: .none // We handle CloudKit manually for better control
+                cloudKitDatabase: .none
             )
             container = try ModelContainer(
                 for: schema,
@@ -33,87 +32,25 @@ struct WitnessApp: App {
             ContentView()
                 .environmentObject(syncService)
                 .task {
-                    // Request notification permission
-                    await NotificationService.shared.requestAuthorization()
-                    await NotificationService.shared.registerCategories()
-                    
-                    // Configure CloudKit sync
+                    await setupNotifications()
                     await syncService.configure(with: container.mainContext)
                 }
         }
         .modelContainer(container)
     }
-}
-
-// MARK: - App Delegate
-
-@MainActor
-class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     
-    func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
-    ) -> Bool {
-        UNUserNotificationCenter.current().delegate = self
-        return true
-    }
-    
-    // Handle notification when app is in foreground
-    nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    ) {
-        // Show notification even when app is in foreground
-        completionHandler([.banner, .sound])
-    }
-    
-    // Handle notification tap
-    nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void
-    ) {
-        let userInfo = response.notification.request.content.userInfo
-        
-        // Handle action
-        switch response.actionIdentifier {
-        case "VIEW_ACTION", UNNotificationDefaultActionIdentifier:
-            // Navigate to item detail
-            if let itemIdString = userInfo["itemId"] as? String {
-                DispatchQueue.main.async {
-                    NotificationCenter.default.post(
-                        name: .openTimestampDetail,
-                        object: nil,
-                        userInfo: ["itemId": itemIdString]
-                    )
-                }
+    private func setupNotifications() async {
+        do {
+            let center = UNUserNotificationCenter.current()
+            let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            print("Notifications authorized: \(granted)")
+            
+            if granted {
+                // Register notification categories for actions
+                NotificationService.shared.registerCategories()
             }
-        case "SHARE_ACTION":
-            // Share proof
-            if let itemIdString = userInfo["itemId"] as? String {
-                DispatchQueue.main.async {
-                    NotificationCenter.default.post(
-                        name: .shareTimestampProof,
-                        object: nil,
-                        userInfo: ["itemId": itemIdString]
-                    )
-                }
-            }
-        case "CHECK_ACTION":
-            // Just open app - refresh will happen automatically
-            break
-        default:
-            break
+        } catch {
+            print("Notification auth error: \(error)")
         }
-        
-        completionHandler()
     }
-}
-
-// MARK: - Notification Names
-
-extension Notification.Name {
-    static let openTimestampDetail = Notification.Name("openTimestampDetail")
-    static let shareTimestampProof = Notification.Name("shareTimestampProof")
 }
