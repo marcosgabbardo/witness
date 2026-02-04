@@ -289,24 +289,6 @@ struct ItemDetailView: View {
                             }
                         }
                         
-                        // Transaction ID - clickable
-                        if let txId = item.bitcoinTxId, !txId.isEmpty {
-                            Link(destination: URL(string: "https://blockstream.info/tx/\(txId)")!) {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Transaction")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Text("\(txId.prefix(16))...\(txId.suffix(8))")
-                                            .font(.system(.caption, design: .monospaced))
-                                    }
-                                    Spacer()
-                                    Image(systemName: "arrow.up.right.square")
-                                        .foregroundStyle(.orange)
-                                }
-                            }
-                            .foregroundStyle(.primary)
-                        }
                     } else {
                         // Block info not available - fetch button
                         VStack(spacing: 8) {
