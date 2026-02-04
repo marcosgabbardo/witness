@@ -133,23 +133,39 @@ actor MerkleVerifier {
             currentHash = try applyOperation(operation, to: currentHash)
         }
         
-        // Step 2: Find Bitcoin attestation
-        guard let bitcoinAttestation = proof.attestations.first(where: { 
+        // Step 2: Check for pending attestations
+        let pendingCalendars = proof.attestations.compactMap { attestation -> String? in
+            if case .pending(let url) = attestation { return url }
+            return nil
+        }
+        
+        // Step 3: Find Bitcoin attestation
+        let bitcoinAttestation = proof.attestations.first(where: { 
             if case .bitcoin = $0 { return true }
             return false
-        }) else {
-            throw MerkleError.noBitcoinAttestation
+        })
+        
+        // If no Bitcoin attestation but has pending, return pending status
+        guard let btcAttestation = bitcoinAttestation,
+              case .bitcoin(let blockHeight) = btcAttestation else {
+            // Return pending result
+            return MerkleVerificationResult(
+                status: pendingCalendars.isEmpty ? .failed("No attestation found") : .pending,
+                blockHeight: nil,
+                blockTime: nil,
+                blockHash: nil,
+                merkleRoot: nil,
+                computedHash: currentHash.hexString,
+                pendingCalendars: pendingCalendars,
+                operations: proof.operations,
+                originalHash: proof.originalHash
+            )
         }
         
-        guard case .bitcoin(let blockHeight) = bitcoinAttestation else {
-            throw MerkleError.noBitcoinAttestation
-        }
-        
-        // Step 3: Fetch block from blockchain and verify merkle root
+        // Step 4: Fetch block from blockchain and verify merkle root
         let blockInfo = try await fetchBlockInfo(height: blockHeight)
         
         // The computed hash should match the merkle root or be derivable from it
-        // In OTS, the final hash is typically a commitment in an OP_RETURN or part of a tx merkle path
         let isValid = try await verifyHashInBlock(
             computedHash: currentHash,
             blockInfo: blockInfo,
@@ -157,12 +173,15 @@ actor MerkleVerifier {
         )
         
         return MerkleVerificationResult(
-            isValid: isValid,
+            status: isValid ? .confirmed : .failed("Hash not found in block"),
             blockHeight: blockHeight,
             blockTime: blockInfo.timestamp,
             blockHash: blockInfo.hash,
             merkleRoot: blockInfo.merkleRoot,
-            computedHash: currentHash.hexString
+            computedHash: currentHash.hexString,
+            pendingCalendars: pendingCalendars,
+            operations: proof.operations,
+            originalHash: proof.originalHash
         )
     }
     
@@ -305,13 +324,32 @@ struct BlockInfo {
     let timestamp: Date
 }
 
+enum VerificationStatus {
+    case confirmed
+    case pending
+    case failed(String)
+}
+
 struct MerkleVerificationResult {
-    let isValid: Bool
-    let blockHeight: Int
-    let blockTime: Date
-    let blockHash: String
-    let merkleRoot: String
+    let status: VerificationStatus
+    let blockHeight: Int?
+    let blockTime: Date?
+    let blockHash: String?
+    let merkleRoot: String?
     let computedHash: String
+    let pendingCalendars: [String]
+    let operations: [OTSOperation]
+    let originalHash: Data
+    
+    var isValid: Bool {
+        if case .confirmed = status { return true }
+        return false
+    }
+    
+    var isPending: Bool {
+        if case .pending = status { return true }
+        return false
+    }
 }
 
 // MARK: - OTS Reader

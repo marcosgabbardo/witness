@@ -12,10 +12,11 @@ struct VerifyExternalView: View {
     @State private var showingFilePicker = false
     @State private var importMode: ImportMode = .ots
     @State private var isVerifying = false
-    @State private var verificationResult: VerificationDisplayResult?
+    @State private var verificationResult: VerificationResult?
     @State private var error: String?
     @State private var selectedFileURL: URL?
     @State private var originalFileURL: URL?
+    @State private var showMerkleTree = false
     
     private let otsService = OpenTimestampsService()
     
@@ -137,7 +138,7 @@ struct VerifyExternalView: View {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.largeTitle)
                                 .foregroundStyle(.red)
-                            Text("Verification Failed")
+                            Text("Error")
                                 .font(.headline)
                             Text(error)
                                 .font(.caption)
@@ -170,22 +171,46 @@ struct VerifyExternalView: View {
             ) { result in
                 handleImport(result)
             }
+            .sheet(isPresented: $showMerkleTree) {
+                if let result = verificationResult {
+                    MerkleTreeView(result: result)
+                }
+            }
         }
     }
     
     @ViewBuilder
-    private func resultView(_ result: VerificationDisplayResult) -> some View {
+    private func resultView(_ result: VerificationResult) -> some View {
         VStack(spacing: 16) {
-            // Status
+            if result.isPending {
+                // Pending State - Didactic explanation
+                pendingView(result)
+            } else if result.isValid {
+                // Confirmed State
+                confirmedView(result)
+            } else {
+                // Failed State
+                failedView(result)
+            }
+        }
+        .padding()
+        .background(backgroundColorFor(result).opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+    
+    @ViewBuilder
+    private func pendingView(_ result: VerificationResult) -> some View {
+        VStack(spacing: 16) {
+            // Header
             HStack {
-                Image(systemName: result.isValid ? "checkmark.seal.fill" : "xmark.seal.fill")
+                Image(systemName: "clock.badge.questionmark")
                     .font(.largeTitle)
-                    .foregroundStyle(result.isValid ? .green : .red)
+                    .foregroundStyle(.orange)
                 
                 VStack(alignment: .leading) {
-                    Text(result.isValid ? "Verified!" : "Invalid")
+                    Text("Pending Confirmation")
                         .font(.headline)
-                    Text(result.isValid ? "This timestamp is anchored in Bitcoin" : "Could not verify timestamp")
+                    Text("Awaiting Bitcoin block inclusion")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -194,48 +219,220 @@ struct VerifyExternalView: View {
             
             Divider()
             
-            // Details
-            if result.isValid {
-                VStack(spacing: 8) {
-                    if let blockHeight = result.blockHeight {
-                        HStack {
-                            Text("Block Height")
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text("#\(blockHeight)")
-                                .fontWeight(.medium)
-                        }
-                        .font(.subheadline)
-                    }
+            // Explanation
+            VStack(alignment: .leading, spacing: 12) {
+                Label {
+                    Text("What this means")
+                        .font(.subheadline.bold())
+                } icon: {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundStyle(.blue)
+                }
+                
+                Text("Your timestamp has been submitted to an OpenTimestamps calendar server. It will be included in a Bitcoin block within the next few hours.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                
+                Text("Once confirmed, anyone can independently verify that your document existed before the block was mined.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            // Calendar info
+            if !result.pendingCalendars.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Calendar Servers")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
                     
-                    if let blockTime = result.blockTime {
+                    ForEach(result.pendingCalendars, id: \.self) { calendar in
                         HStack {
-                            Text("Block Time")
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(blockTime.formatted(date: .abbreviated, time: .shortened))
-                                .fontWeight(.medium)
-                        }
-                        .font(.subheadline)
-                    }
-                    
-                    if let txId = result.txId, !txId.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Transaction")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            Text(txId)
+                            Image(systemName: "server.rack")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                            Text(formatCalendarUrl(calendar))
                                 .font(.caption)
                                 .fontDesign(.monospaced)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
             }
+            
+            // Hash info
+            if !result.originalHash.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Document Hash (SHA-256)")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+                    Text(result.originalHash)
+                        .font(.caption2)
+                        .fontDesign(.monospaced)
+                        .lineLimit(2)
+                }
+            }
+            
+            // Merkle Tree button
+            if !result.operations.isEmpty {
+                Button {
+                    showMerkleTree = true
+                } label: {
+                    HStack {
+                        Image(systemName: "tree")
+                        Text("View Merkle Path")
+                    }
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color(.systemGray5))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Upgrade tip
+            VStack(alignment: .leading, spacing: 8) {
+                Label {
+                    Text("Tip")
+                        .font(.caption.bold())
+                } icon: {
+                    Image(systemName: "lightbulb.fill")
+                        .foregroundStyle(.yellow)
+                }
+                
+                Text("Check back in a few hours, or use the original Witness app to automatically upgrade your timestamp once it's confirmed.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
-        .padding()
-        .background(result.isValid ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+    
+    @ViewBuilder
+    private func confirmedView(_ result: VerificationResult) -> some View {
+        VStack(spacing: 16) {
+            // Header
+            HStack {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.largeTitle)
+                    .foregroundStyle(.green)
+                
+                VStack(alignment: .leading) {
+                    Text("Verified!")
+                        .font(.headline)
+                    Text("Anchored in Bitcoin blockchain")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Divider()
+            
+            // Block details
+            VStack(spacing: 8) {
+                if let blockHeight = result.blockHeight {
+                    HStack {
+                        Text("Block Height")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text("#\(blockHeight.formatted())")
+                            .fontWeight(.medium)
+                    }
+                    .font(.subheadline)
+                }
+                
+                if let blockTime = result.blockTime {
+                    HStack {
+                        Text("Block Time")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(blockTime.formatted(date: .abbreviated, time: .shortened))
+                            .fontWeight(.medium)
+                    }
+                    .font(.subheadline)
+                }
+                
+                if let txId = result.txId, !txId.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Block Hash")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(txId)
+                            .font(.caption)
+                            .fontDesign(.monospaced)
+                            .lineLimit(2)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            
+            // Merkle Tree button
+            if !result.operations.isEmpty {
+                Button {
+                    showMerkleTree = true
+                } label: {
+                    HStack {
+                        Image(systemName: "tree")
+                        Text("View Merkle Path")
+                    }
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color(.systemGray5))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func failedView(_ result: VerificationResult) -> some View {
+        VStack(spacing: 16) {
+            // Header
+            HStack {
+                Image(systemName: "xmark.seal.fill")
+                    .font(.largeTitle)
+                    .foregroundStyle(.red)
+                
+                VStack(alignment: .leading) {
+                    Text("Verification Failed")
+                        .font(.headline)
+                    Text("Could not verify timestamp")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if let errorMessage = result.errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+    
+    private func backgroundColorFor(_ result: VerificationResult) -> Color {
+        if result.isPending {
+            return .orange
+        } else if result.isValid {
+            return .green
+        } else {
+            return .red
+        }
+    }
+    
+    private func formatCalendarUrl(_ url: String) -> String {
+        // Extract just the host from URL
+        if let urlObj = URL(string: url) {
+            return urlObj.host ?? url
+        }
+        return url
     }
     
     private func handleImport(_ result: Result<[URL], Error>) {
@@ -298,25 +495,153 @@ struct VerifyExternalView: View {
                 }
             }
             
-            let result = try await otsService.verifyTimestamp(otsData: otsData, originalHash: hashData)
-            
-            verificationResult = VerificationDisplayResult(
-                isValid: result.isValid,
-                blockHeight: result.blockHeight,
-                blockTime: result.blockTime,
-                txId: result.txId
-            )
+            verificationResult = try await otsService.verifyTimestamp(otsData: otsData, originalHash: hashData)
         } catch {
             self.error = error.localizedDescription
         }
     }
 }
 
-struct VerificationDisplayResult {
-    let isValid: Bool
-    let blockHeight: Int?
-    let blockTime: Date?
-    let txId: String?
+// MARK: - Merkle Tree View
+
+struct MerkleTreeView: View {
+    @Environment(\.dismiss) private var dismiss
+    let result: VerificationResult
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Header
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Merkle Path", systemImage: "tree")
+                            .font(.title2.bold())
+                        
+                        Text("The cryptographic operations that link your document to the Bitcoin blockchain.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal)
+                    
+                    // Original Hash
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Document Hash")
+                            .font(.headline)
+                        
+                        Text(result.originalHash)
+                            .font(.caption)
+                            .fontDesign(.monospaced)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .padding(.horizontal)
+                    
+                    // Operations
+                    if !result.operations.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Operations (\(result.operations.count))")
+                                .font(.headline)
+                            
+                            ForEach(Array(result.operations.enumerated()), id: \.offset) { index, op in
+                                HStack(alignment: .top, spacing: 12) {
+                                    Text("\(index + 1)")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(.white)
+                                        .frame(width: 24, height: 24)
+                                        .background(Circle().fill(Color.blue))
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(operationName(op))
+                                            .font(.subheadline.bold())
+                                        
+                                        if let data = operationData(op) {
+                                            Text(data)
+                                                .font(.caption2)
+                                                .fontDesign(.monospaced)
+                                                .foregroundStyle(.secondary)
+                                                .lineLimit(2)
+                                        }
+                                    }
+                                }
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color(.systemGray6))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    // Computed Hash
+                    if !result.computedHash.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Computed Hash")
+                                .font(.headline)
+                            
+                            Text(result.computedHash)
+                                .font(.caption)
+                                .fontDesign(.monospaced)
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color(.systemGray6))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    // Explanation
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("How it works", systemImage: "info.circle.fill")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.blue)
+                        
+                        Text("Each operation transforms the hash. Prepend/Append adds data, SHA256 computes a new hash. The final hash is committed to the Bitcoin blockchain, creating an immutable proof that your document existed at that time.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .background(Color.blue.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal)
+                }
+                .padding(.vertical)
+            }
+            .navigationTitle("Merkle Path")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func operationName(_ op: OTSOperation) -> String {
+        switch op {
+        case .sha256: return "SHA-256"
+        case .sha1: return "SHA-1"
+        case .ripemd160: return "RIPEMD-160"
+        case .append: return "Append"
+        case .prepend: return "Prepend"
+        case .reverse: return "Reverse"
+        case .hexlify: return "Hexlify"
+        }
+    }
+    
+    private func operationData(_ op: OTSOperation) -> String? {
+        switch op {
+        case .append(let data):
+            return data.hexString
+        case .prepend(let data):
+            return data.hexString
+        default:
+            return nil
+        }
+    }
 }
 
 #Preview {

@@ -145,22 +145,49 @@ actor OpenTimestampsService {
             throw OTSError.invalidOtsFormat
         }
         
-        // Check if it has Bitcoin attestation
-        guard containsBitcoinAttestation(otsData) else {
-            throw OTSError.pendingConfirmation
-        }
-        
         // Use the comprehensive Merkle verifier
         do {
             let proof = try await merkleVerifier.parseOtsFile(otsData)
             let merkleResult = try await merkleVerifier.verifyProof(proof, originalHash: originalHash)
             
-            return VerificationResult(
-                isValid: merkleResult.isValid,
-                blockHeight: merkleResult.blockHeight,
-                blockTime: merkleResult.blockTime,
-                txId: merkleResult.blockHash
-            )
+            // Check status
+            switch merkleResult.status {
+            case .confirmed:
+                return .confirmed(
+                    blockHeight: merkleResult.blockHeight ?? 0,
+                    blockTime: merkleResult.blockTime ?? Date(),
+                    txId: merkleResult.blockHash,
+                    operations: merkleResult.operations,
+                    originalHash: merkleResult.originalHash.hexString,
+                    computedHash: merkleResult.computedHash
+                )
+                
+            case .pending:
+                return .pending(
+                    calendars: merkleResult.pendingCalendars,
+                    operations: merkleResult.operations,
+                    originalHash: merkleResult.originalHash.hexString,
+                    computedHash: merkleResult.computedHash
+                )
+                
+            case .failed(let message):
+                return .failed(message: message)
+            }
+        } catch MerkleError.noBitcoinAttestation {
+            // Try to parse again just to get the pending calendars
+            if let proof = try? await merkleVerifier.parseOtsFile(otsData) {
+                let pendingCalendars = proof.attestations.compactMap { attestation -> String? in
+                    if case .pending(let url) = attestation { return url }
+                    return nil
+                }
+                return .pending(
+                    calendars: pendingCalendars,
+                    operations: proof.operations,
+                    originalHash: proof.originalHash.hexString,
+                    computedHash: ""
+                )
+            }
+            return .failed(message: "No Bitcoin attestation found")
         } catch {
             // Fallback to simple extraction if full verification fails
             if let blockInfo = extractBitcoinBlockInfo(otsData) {
@@ -171,16 +198,18 @@ actor OpenTimestampsService {
                 )
                 
                 if verified {
-                    return VerificationResult(
-                        isValid: true,
+                    return .confirmed(
                         blockHeight: blockInfo.height,
-                        blockTime: blockInfo.timestamp,
-                        txId: blockInfo.txId
+                        blockTime: blockInfo.timestamp ?? Date(),
+                        txId: blockInfo.txId,
+                        operations: [],
+                        originalHash: originalHash.hexString,
+                        computedHash: ""
                     )
                 }
             }
             
-            throw OTSError.verificationFailed("Could not verify against blockchain: \(error.localizedDescription)")
+            return .failed(message: "Could not verify against blockchain: \(error.localizedDescription)")
         }
     }
     
@@ -304,9 +333,60 @@ actor OpenTimestampsService {
 
 struct VerificationResult {
     let isValid: Bool
-    let blockHeight: Int
-    let blockTime: Date
-    let txId: String
+    let isPending: Bool
+    let blockHeight: Int?
+    let blockTime: Date?
+    let txId: String?
+    let pendingCalendars: [String]
+    let operations: [OTSOperation]
+    let originalHash: String
+    let computedHash: String
+    let errorMessage: String?
+    
+    static func confirmed(blockHeight: Int, blockTime: Date, txId: String?, operations: [OTSOperation], originalHash: String, computedHash: String) -> VerificationResult {
+        VerificationResult(
+            isValid: true,
+            isPending: false,
+            blockHeight: blockHeight,
+            blockTime: blockTime,
+            txId: txId,
+            pendingCalendars: [],
+            operations: operations,
+            originalHash: originalHash,
+            computedHash: computedHash,
+            errorMessage: nil
+        )
+    }
+    
+    static func pending(calendars: [String], operations: [OTSOperation], originalHash: String, computedHash: String) -> VerificationResult {
+        VerificationResult(
+            isValid: false,
+            isPending: true,
+            blockHeight: nil,
+            blockTime: nil,
+            txId: nil,
+            pendingCalendars: calendars,
+            operations: operations,
+            originalHash: originalHash,
+            computedHash: computedHash,
+            errorMessage: nil
+        )
+    }
+    
+    static func failed(message: String) -> VerificationResult {
+        VerificationResult(
+            isValid: false,
+            isPending: false,
+            blockHeight: nil,
+            blockTime: nil,
+            txId: nil,
+            pendingCalendars: [],
+            operations: [],
+            originalHash: "",
+            computedHash: "",
+            errorMessage: message
+        )
+    }
 }
 
 // MARK: - Extensions
