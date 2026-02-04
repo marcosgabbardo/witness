@@ -414,11 +414,18 @@ struct ItemDetailView: View {
     
     private func share() async {
         do {
+            // Debug info
+            let hasOts = item.otsData != nil
+            let hasPendingOts = item.pendingOtsData != nil
+            let otsSize = item.otsData?.count ?? item.pendingOtsData?.count ?? 0
+            
             shareURLs = try await manager.getShareURLs(for: item)
             if !shareURLs.isEmpty {
                 showingShareSheet = true
             } else {
-                self.error = NSError(domain: "Witness", code: 0, userInfo: [NSLocalizedDescriptionKey: "No proof files found. The .ots file may not have been saved yet."])
+                self.error = NSError(domain: "Witness", code: 0, userInfo: [
+                    NSLocalizedDescriptionKey: "No proof files found.\n\nDebug: otsData=\(hasOts), pendingOtsData=\(hasPendingOts), size=\(otsSize) bytes"
+                ])
                 showingError = true
             }
         } catch {

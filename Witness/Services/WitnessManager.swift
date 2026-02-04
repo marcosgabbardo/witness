@@ -258,12 +258,17 @@ final class WitnessManager {
         // Extract needed values on MainActor before calling actor
         let itemId = item.id
         let contentFileName = item.contentFileName
-        let hasOtsData = item.otsData != nil || item.pendingOtsData != nil
+        let otsData = item.otsData ?? item.pendingOtsData
+        
+        // Ensure OTS proof is saved to disk (might have been lost on reinstall)
+        if let otsData = otsData {
+            try await storageService.saveProof(otsData, for: itemId)
+        }
         
         return try await storageService.createShareBundle(
             itemId: itemId,
             contentFileName: contentFileName,
-            hasOtsData: hasOtsData
+            hasOtsData: otsData != nil
         )
     }
     

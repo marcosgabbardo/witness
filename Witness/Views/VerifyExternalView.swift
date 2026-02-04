@@ -1,6 +1,12 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+extension UTType {
+    static var openTimestampsProof: UTType {
+        UTType(importedAs: "org.opentimestamps.ots")
+    }
+}
+
 struct VerifyExternalView: View {
     @Environment(\.dismiss) private var dismiss
     
@@ -11,6 +17,7 @@ struct VerifyExternalView: View {
     @State private var selectedFileURL: URL?
     @State private var originalFileURL: URL?
     @State private var hashToVerify: Data?
+    @State private var isImportingOriginal = false
     
     private let otsService = OpenTimestampsService()
     
@@ -72,8 +79,7 @@ struct VerifyExternalView: View {
                             .foregroundStyle(.secondary)
                         
                         Button {
-                            // Import original file
-                            importOriginalFile()
+                            isImportingOriginal = true
                         } label: {
                             HStack {
                                 Image(systemName: originalFileURL != nil ? "checkmark.circle.fill" : "doc.badge.plus")
@@ -157,10 +163,17 @@ struct VerifyExternalView: View {
             }
             .fileImporter(
                 isPresented: $isImporting,
-                allowedContentTypes: [UTType(filenameExtension: "ots") ?? .data],
+                allowedContentTypes: [.openTimestampsProof, .data],
                 allowsMultipleSelection: false
             ) { result in
                 handleOTSImport(result)
+            }
+            .fileImporter(
+                isPresented: $isImportingOriginal,
+                allowedContentTypes: [.item],
+                allowsMultipleSelection: false
+            ) { result in
+                handleOriginalImport(result)
             }
         }
     }
@@ -234,19 +247,23 @@ struct VerifyExternalView: View {
         switch result {
         case .success(let urls):
             if let url = urls.first {
-                // Need to start accessing security-scoped resource
-                if url.startAccessingSecurityScopedResource() {
-                    selectedFileURL = url
-                }
+                // Store the URL - we'll handle security scope when verifying
+                selectedFileURL = url
             }
         case .failure(let error):
             self.error = error.localizedDescription
         }
     }
     
-    private func importOriginalFile() {
-        // For simplicity, we'll use a simple hash input
-        // In a full implementation, we'd have another file importer
+    private func handleOriginalImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            if let url = urls.first {
+                originalFileURL = url
+            }
+        case .failure(let error):
+            self.error = error.localizedDescription
+        }
     }
     
     private func verify() async {
@@ -258,20 +275,33 @@ struct VerifyExternalView: View {
         
         defer {
             isVerifying = false
-            otsURL.stopAccessingSecurityScopedResource()
         }
         
         do {
-            let otsData = try Data(contentsOf: otsURL)
+            // Copy file to temp location to avoid permission issues
+            let tempDir = FileManager.default.temporaryDirectory
+            let tempOtsURL = tempDir.appendingPathComponent("verify_\(UUID().uuidString).ots")
+            
+            // Start accessing and copy
+            let accessing = otsURL.startAccessingSecurityScopedResource()
+            defer { 
+                if accessing { otsURL.stopAccessingSecurityScopedResource() }
+                try? FileManager.default.removeItem(at: tempOtsURL)
+            }
+            
+            try FileManager.default.copyItem(at: otsURL, to: tempOtsURL)
+            let otsData = try Data(contentsOf: tempOtsURL)
             
             // If we have original file, compute its hash
             var hashData: Data
             if let originalURL = originalFileURL {
+                let origAccessing = originalURL.startAccessingSecurityScopedResource()
+                defer { if origAccessing { originalURL.stopAccessingSecurityScopedResource() } }
+                
                 let originalData = try Data(contentsOf: originalURL)
                 hashData = await otsService.sha256(data: originalData)
             } else {
                 // Extract hash from OTS file (first 32 bytes after header + version + hash type)
-                // This is a simplified extraction
                 let headerSize = 31 + 1 + 1 // magic + version + hash type
                 if otsData.count > headerSize + 32 {
                     hashData = otsData.subdata(in: (headerSize)..<(headerSize + 32))
