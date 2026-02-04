@@ -234,27 +234,81 @@ struct ItemDetailView: View {
             .background(Color(.systemGray6))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
-            // Bitcoin info if confirmed
+            // Bitcoin blockchain info if confirmed
             if item.isConfirmed, let blockHeight = item.bitcoinBlockHeight {
-                HStack {
-                    Image(systemName: "bitcoinsign.circle.fill")
-                        .foregroundStyle(.orange)
+                VStack(alignment: .leading, spacing: 12) {
+                    // Header
+                    HStack {
+                        Image(systemName: "bitcoinsign.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.orange)
+                        
+                        Text("Bitcoin Blockchain")
+                            .font(.headline)
+                            .foregroundStyle(.orange)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundStyle(.green)
+                    }
                     
-                    Text("Block #\(blockHeight)")
-                        .font(.subheadline)
+                    Divider()
                     
-                    Spacer()
+                    // Block Height - clickable
+                    Link(destination: URL(string: "https://blockstream.info/block-height/\(blockHeight)")!) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Block Height")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text("#\(formatBlockHeight(blockHeight))")
+                                    .font(.system(.body, design: .monospaced))
+                                    .fontWeight(.semibold)
+                            }
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                    .foregroundStyle(.primary)
                     
+                    // Block Time
+                    if let blockTime = item.bitcoinBlockTime {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Block Time")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(blockTime.formatted(date: .abbreviated, time: .shortened))
+                                    .font(.subheadline)
+                            }
+                            Spacer()
+                        }
+                    }
+                    
+                    // Transaction ID - clickable
                     if let txId = item.bitcoinTxId, !txId.isEmpty {
                         Link(destination: URL(string: "https://blockstream.info/tx/\(txId)")!) {
-                            Text("View on Blockchain")
-                                .font(.caption)
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Transaction")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text("\(txId.prefix(16))...\(txId.suffix(8))")
+                                        .font(.system(.caption, design: .monospaced))
+                                }
+                                Spacer()
+                                Image(systemName: "arrow.up.right.square")
+                                    .foregroundStyle(.orange)
+                            }
                         }
+                        .foregroundStyle(.primary)
                     }
                 }
                 .padding()
                 .background(Color.orange.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
     }
@@ -506,6 +560,15 @@ struct ItemDetailView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - Helpers
+    
+    private func formatBlockHeight(_ height: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        return formatter.string(from: NSNumber(value: height)) ?? "\(height)"
     }
     
     // MARK: - Actions
