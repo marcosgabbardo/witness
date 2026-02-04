@@ -474,15 +474,14 @@ struct ItemDetailView: View {
     
     private func share() async {
         do {
-            // Debug info
-            let hasOts = item.otsData != nil
-            let hasPendingOts = item.pendingOtsData != nil
-            let otsSize = item.otsData?.count ?? item.pendingOtsData?.count ?? 0
-            
-            shareURLs = try await manager.getShareURLs(for: item)
-            if !shareURLs.isEmpty {
-                showingShareSheet = true
+            let urls = try await manager.getShareURLs(for: item)
+            if !urls.isEmpty {
+                // Use imperative presentation to avoid SwiftUI timing issues
+                presentShareSheet(urls: urls)
             } else {
+                let hasOts = item.otsData != nil
+                let hasPendingOts = item.pendingOtsData != nil
+                let otsSize = item.otsData?.count ?? item.pendingOtsData?.count ?? 0
                 self.error = NSError(domain: "Witness", code: 0, userInfo: [
                     NSLocalizedDescriptionKey: "No proof files found.\n\nDebug: otsData=\(hasOts), pendingOtsData=\(hasPendingOts), size=\(otsSize) bytes"
                 ])
@@ -499,9 +498,9 @@ struct ItemDetailView: View {
         defer { isGeneratingPDF = false }
         
         do {
-            shareURLs = try await manager.getShareURLsWithCertificate(for: item)
-            if !shareURLs.isEmpty {
-                showingShareSheet = true
+            let urls = try await manager.getShareURLsWithCertificate(for: item)
+            if !urls.isEmpty {
+                presentShareSheet(urls: urls)
             }
         } catch {
             self.error = error
@@ -514,10 +513,9 @@ struct ItemDetailView: View {
         defer { isGeneratingPDF = false }
         
         do {
-            // Get PDF + original file + .ots
-            shareURLs = try await manager.getShareURLsAll(for: item)
-            if !shareURLs.isEmpty {
-                showingShareSheet = true
+            let urls = try await manager.getShareURLsAll(for: item)
+            if !urls.isEmpty {
+                presentShareSheet(urls: urls)
             }
         } catch {
             self.error = error
@@ -527,9 +525,9 @@ struct ItemDetailView: View {
     
     private func shareOtsOnly() async {
         do {
-            shareURLs = try await manager.getShareURLsOtsOnly(for: item)
-            if !shareURLs.isEmpty {
-                showingShareSheet = true
+            let urls = try await manager.getShareURLsOtsOnly(for: item)
+            if !urls.isEmpty {
+                presentShareSheet(urls: urls)
             }
         } catch {
             self.error = error
@@ -543,8 +541,7 @@ struct ItemDetailView: View {
         
         do {
             let pdfUrl = try await manager.generatePDFCertificate(for: item)
-            shareURLs = [pdfUrl]
-            showingShareSheet = true
+            presentShareSheet(urls: [pdfUrl])
         } catch {
             self.error = error
             showingError = true
@@ -664,10 +661,54 @@ struct ShareSheet: UIViewControllerRepresentable {
     let urls: [URL]
     
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: urls, applicationActivities: nil)
+        // Pre-load file data to ensure system has them ready
+        let items: [Any] = urls.compactMap { url -> Any? in
+            // Read file data and create a proper activity item
+            guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+            return url
+        }
+        
+        let controller = UIActivityViewController(
+            activityItems: items.isEmpty ? urls : items,
+            applicationActivities: nil
+        )
+        return controller
     }
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// Alternative: Present share sheet imperatively to avoid SwiftUI timing issues
+extension View {
+    func presentShareSheet(urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        
+        // Ensure we're on main thread and files exist
+        let validUrls = urls.filter { FileManager.default.fileExists(atPath: $0.path) }
+        guard !validUrls.isEmpty else { return }
+        
+        DispatchQueue.main.async {
+            let activityVC = UIActivityViewController(activityItems: validUrls, applicationActivities: nil)
+            
+            // Find the top-most view controller
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first,
+               var topController = window.rootViewController {
+                while let presented = topController.presentedViewController {
+                    topController = presented
+                }
+                
+                // iPad popover support
+                if let popover = activityVC.popoverPresentationController {
+                    popover.sourceView = topController.view
+                    popover.sourceRect = CGRect(x: topController.view.bounds.midX, y: topController.view.bounds.midY, width: 0, height: 0)
+                    popover.permittedArrowDirections = []
+                }
+                
+                topController.present(activityVC, animated: true)
+            }
+        }
+    }
 }
 
 #Preview {
