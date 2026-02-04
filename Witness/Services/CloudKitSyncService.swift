@@ -45,12 +45,25 @@ final class CloudKitSyncService: ObservableObject {
         self.modelContext = modelContext
         self.storageService = storage
         
+        // iCloud sync disabled - requires paid Apple Developer account
+        // When you have a paid account:
+        // 1. Add iCloud capability in Xcode
+        // 2. Uncomment the code below
+        // 3. Remove this early return
+        
+        logger.info("iCloud sync disabled - requires paid Apple Developer account")
+        syncState = .unavailable
+        isAvailable = false
+        return
+        
+        /*
         // Initialize CloudKit
         container = CKContainer(identifier: containerIdentifier)
         database = container?.privateCloudDatabase
         
         // Check account status
         await checkAccountStatus()
+        */
     }
     
     private func checkAccountStatus() async {

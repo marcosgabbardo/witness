@@ -6,13 +6,5 @@
 	<array>
 		<string>group.com.makiavel.witness</string>
 	</array>
-	<key>com.apple.developer.icloud-services</key>
-	<array>
-		<string>CloudKit</string>
-	</array>
-	<key>com.apple.developer.icloud-container-identifiers</key>
-	<array>
-		<string>iCloud.com.makiavel.witness</string>
-	</array>
 </dict>
 </plist>

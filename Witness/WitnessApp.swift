@@ -36,8 +36,10 @@ struct WitnessApp: App {
                     await setupNotifications()
                     await syncService.configure(with: container.mainContext, storage: storageService)
                     
-                    // Initial sync
-                    await syncService.sync()
+                    // Initial sync (only if available)
+                    if syncService.isAvailable {
+                        await syncService.sync()
+                    }
                 }
         }
         .modelContainer(container)
