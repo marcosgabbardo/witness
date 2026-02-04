@@ -184,27 +184,40 @@ final class WitnessManager {
     
     /// Try to upgrade a pending timestamp to confirmed
     func upgradeTimestamp(_ item: WitnessItem, context: ModelContext) async {
-        guard item.status == .submitted else { return }
+        guard item.status == .submitted else { 
+            print("⏭️ Skipping \(item.displayTitle) - status is \(item.status)")
+            return 
+        }
+        
+        print("🔄 Checking upgrade for: \(item.displayTitle)")
+        print("   Hash: \(item.hashHex)")
+        print("   Calendar: \(item.calendarUrl ?? "none")")
         
         // Try original calendar first, then all calendars
         var upgradedOts: Data?
         
         if let calendarUrl = item.calendarUrl {
+            print("   Trying original calendar: \(calendarUrl)")
             upgradedOts = try? await otsService.upgradeTimestamp(
                 hash: item.contentHash,
                 calendarUrl: calendarUrl
             )
+            print("   Result: \(upgradedOts != nil ? "got data (\(upgradedOts!.count) bytes)" : "nil")")
         }
         
         // If original calendar didn't work, try all calendars
         if upgradedOts == nil {
+            print("   Trying all calendars...")
             upgradedOts = await otsService.upgradeTimestampFromAnyCalendar(hash: item.contentHash)
+            print("   Result: \(upgradedOts != nil ? "got data (\(upgradedOts!.count) bytes)" : "nil")")
         }
         
         guard let finalOts = upgradedOts else {
-            // Not ready yet
+            print("❌ No upgrade available yet for \(item.displayTitle)")
             return
         }
+        
+        print("✅ Got upgraded proof for \(item.displayTitle)!")
         
         // Update item with confirmed proof
         item.otsData = finalOts

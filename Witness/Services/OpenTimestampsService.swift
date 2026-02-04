@@ -109,10 +109,14 @@ actor OpenTimestampsService {
     /// Try to upgrade a pending timestamp to a complete one with Bitcoin attestation
     func upgradeTimestamp(hash: Data, calendarUrl: String) async throws -> Data? {
         guard let calendar = OTSCalendar(rawValue: calendarUrl) else {
+            print("   ❌ Invalid calendar URL: \(calendarUrl)")
             throw OTSError.calendarUnavailable
         }
         
-        let url = URL(string: "\(calendar.timestampEndpoint)/\(hash.hexString)")!
+        let urlString = "\(calendar.timestampEndpoint)/\(hash.hexString)"
+        let url = URL(string: urlString)!
+        print("   📡 Fetching: \(urlString)")
+        
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/vnd.opentimestamps.v1", forHTTPHeaderField: "Accept")
@@ -123,19 +127,28 @@ actor OpenTimestampsService {
             throw OTSError.networkError(URLError(.badServerResponse))
         }
         
+        print("   📬 Status: \(httpResponse.statusCode), Size: \(data.count) bytes")
+        
         switch httpResponse.statusCode {
         case 200:
             // Check if it contains Bitcoin attestation
-            if containsBitcoinAttestation(data) {
+            let hasBitcoin = containsBitcoinAttestation(data)
+            print("   🔍 Has Bitcoin attestation: \(hasBitcoin)")
+            
+            if hasBitcoin {
                 // Construct complete .ots file with Bitcoin attestation
                 let completeOts = constructOtsFile(hash: hash, calendarResponse: data, calendarUrl: calendarUrl)
+                print("   ✅ Built complete OTS: \(completeOts.count) bytes")
                 return completeOts
             } else {
+                print("   ⏳ Still pending (no Bitcoin attestation yet)")
                 return nil // Still pending
             }
         case 404:
+            print("   ⏳ Not found (404) - not ready yet")
             return nil // Not ready yet
         default:
+            print("   ❌ Unexpected status: \(httpResponse.statusCode)")
             throw OTSError.invalidResponse(httpResponse.statusCode)
         }
     }

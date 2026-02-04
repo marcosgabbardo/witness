@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct ItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
@@ -19,8 +20,10 @@ struct ItemDetailView: View {
     @State private var error: Error?
     @State private var showingError = false
     @State private var merkleTreeData: MerkleTreeData?
+    @State private var showingImportProof = false
     
     private let merkleVerifier = MerkleVerifier()
+    private let otsService = OpenTimestampsService()
     
     var body: some View {
         NavigationStack {
@@ -113,6 +116,13 @@ struct ItemDetailView: View {
                     blockHeight: item.bitcoinBlockHeight,
                     blockTime: item.bitcoinBlockTime
                 )
+            }
+            .fileImporter(
+                isPresented: $showingImportProof,
+                allowedContentTypes: [.data],
+                allowsMultipleSelection: false
+            ) { result in
+                Task { await handleImportProof(result) }
             }
             .task {
                 if item.contentType == .photo {
@@ -372,6 +382,20 @@ struct ItemDetailView: View {
                     .background(Color(.systemGray5))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+                
+                // Import updated proof button
+                Button {
+                    showingImportProof = true
+                } label: {
+                    HStack {
+                        Image(systemName: "square.and.arrow.down")
+                        Text("Import Updated Proof")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color(.systemGray5))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
             }
             
             // Share button
@@ -512,6 +536,78 @@ struct ItemDetailView: View {
             )
         } catch {
             self.error = error
+            showingError = true
+        }
+    }
+    
+    private func handleImportProof(_ result: Result<[URL], Error>) async {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            
+            // Start security access
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+            
+            do {
+                let otsData = try Data(contentsOf: url)
+                
+                // Verify it's valid OTS format
+                let proof = try await merkleVerifier.parseOtsFile(otsData)
+                
+                // Check if it has Bitcoin attestation
+                let hasBitcoin = proof.attestations.contains { attestation in
+                    if case .bitcoin = attestation { return true }
+                    return false
+                }
+                
+                guard hasBitcoin else {
+                    self.error = NSError(domain: "Witness", code: 1, userInfo: [
+                        NSLocalizedDescriptionKey: "This proof file is still pending. Please download an upgraded proof from opentimestamps.org"
+                    ])
+                    showingError = true
+                    return
+                }
+                
+                // Verify the hash matches
+                guard proof.originalHash == item.contentHash else {
+                    self.error = NSError(domain: "Witness", code: 2, userInfo: [
+                        NSLocalizedDescriptionKey: "This proof file is for a different document (hash mismatch)"
+                    ])
+                    showingError = true
+                    return
+                }
+                
+                // Update the item
+                item.otsData = otsData
+                item.status = .confirmed
+                item.confirmedAt = Date()
+                item.lastUpdated = Date()
+                
+                // Try to extract block info
+                let verificationResult = try await otsService.verifyTimestamp(
+                    otsData: otsData,
+                    originalHash: item.contentHash
+                )
+                
+                if verificationResult.isValid {
+                    item.bitcoinBlockHeight = verificationResult.blockHeight
+                    item.bitcoinBlockTime = verificationResult.blockTime
+                    item.bitcoinTxId = verificationResult.txId
+                }
+                
+                try modelContext.save()
+                
+                // Haptic feedback
+                HapticManager.shared.timestampConfirmed()
+                
+            } catch {
+                self.error = error
+                showingError = true
+            }
+            
+        case .failure(let err):
+            self.error = err
             showingError = true
         }
     }
