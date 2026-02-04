@@ -389,21 +389,7 @@ struct ItemDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 
-                // Import updated proof button
-                Button {
-                    showingImportProof = true
-                } label: {
-                    HStack {
-                        Image(systemName: "square.and.arrow.down")
-                        Text("Import Updated Proof")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.systemGray5))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                
-                }
+            }
             
             // Share button
             Button {
