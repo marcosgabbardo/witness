@@ -1,4 +1,4 @@
-name: Witness
+name: DataStamp
 options:
   bundleIdPrefix: com.makiavel
   deploymentTarget:
@@ -15,45 +15,45 @@ settings:
     CODE_SIGN_STYLE: Automatic
 
 targets:
-  Witness:
+  DataStamp:
     type: application
     platform: iOS
     sources:
-      - path: Witness
+      - path: DataStamp
         excludes:
           - "**/.DS_Store"
-      - path: Witness/Resources/Assets.xcassets
-      - path: Witness/Resources/en.lproj
-      - path: Witness/Resources/pt-BR.lproj
+      - path: DataStamp/Resources/Assets.xcassets
+      - path: DataStamp/Resources/en.lproj
+      - path: DataStamp/Resources/pt-BR.lproj
     settings:
       base:
-        INFOPLIST_FILE: Witness/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.makiavel.witness
+        INFOPLIST_FILE: DataStamp/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.makiavel.datestamp
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: false
     entitlements:
-      path: Witness/Witness.entitlements
+      path: DataStamp/DataStamp.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.makiavel.witness
+          - group.com.makiavel.datestamp
         # iCloud disabled temporarily - configure in Apple Developer Portal first
         # com.apple.developer.icloud-services:
         #   - CloudKit
         # com.apple.developer.icloud-container-identifiers:
-        #   - iCloud.com.makiavel.witness
+        #   - iCloud.com.makiavel.datestamp
     dependencies:
-      - target: WitnessShareExtension
+      - target: DataStampShareExtension
         embed: true
-      - target: WitnessWidget
+      - target: DataStampWidget
         embed: true
     info:
-      path: Witness/Info.plist
+      path: DataStamp/Info.plist
       properties:
-        CFBundleName: Witness
-        CFBundleDisplayName: Witness
+        CFBundleName: DataStamp
+        CFBundleDisplayName: DataStamp
         CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleShortVersionString: $(MARKETING_VERSION)
@@ -70,32 +70,32 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
-        NSCameraUsageDescription: "Witness needs camera access to timestamp photos"
-        NSPhotoLibraryUsageDescription: "Witness needs photo library access to timestamp existing photos"
+        NSCameraUsageDescription: "DataStamp needs camera access to timestamp photos"
+        NSPhotoLibraryUsageDescription: "DataStamp needs photo library access to timestamp existing photos"
 
-  WitnessShareExtension:
+  DataStampShareExtension:
     type: app-extension
     platform: iOS
     sources:
-      - path: WitnessShareExtension
+      - path: DataStampShareExtension
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.makiavel.witness.share
-        INFOPLIST_FILE: WitnessShareExtension/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.makiavel.datestamp.share
+        INFOPLIST_FILE: DataStampShareExtension/Info.plist
         SKIP_INSTALL: true
-        CODE_SIGN_ENTITLEMENTS: WitnessShareExtension/WitnessShareExtension.entitlements
+        CODE_SIGN_ENTITLEMENTS: DataStampShareExtension/DataStampShareExtension.entitlements
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
     entitlements:
-      path: WitnessShareExtension/WitnessShareExtension.entitlements
+      path: DataStampShareExtension/DataStampShareExtension.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.makiavel.witness
+          - group.com.makiavel.datestamp
     info:
-      path: WitnessShareExtension/Info.plist
+      path: DataStampShareExtension/Info.plist
       properties:
-        CFBundleName: Share to Witness
-        CFBundleDisplayName: Witness
+        CFBundleName: Share to DataStamp
+        CFBundleDisplayName: DataStamp
         CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleShortVersionString: $(MARKETING_VERSION)
@@ -111,30 +111,30 @@ targets:
               NSExtensionActivationSupportsText: true
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
 
-  WitnessWidget:
+  DataStampWidget:
     type: app-extension
     platform: iOS
     sources:
-      - path: WitnessWidget
+      - path: DataStampWidget
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.makiavel.witness.widget
-        INFOPLIST_FILE: WitnessWidget/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.makiavel.datestamp.widget
+        INFOPLIST_FILE: DataStampWidget/Info.plist
         SKIP_INSTALL: true
-        CODE_SIGN_ENTITLEMENTS: WitnessWidget/WitnessWidget.entitlements
+        CODE_SIGN_ENTITLEMENTS: DataStampWidget/DataStampWidget.entitlements
         ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME: WidgetBackground
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
     entitlements:
-      path: WitnessWidget/WitnessWidget.entitlements
+      path: DataStampWidget/DataStampWidget.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.makiavel.witness
+          - group.com.makiavel.datestamp
     info:
-      path: WitnessWidget/Info.plist
+      path: DataStampWidget/Info.plist
       properties:
-        CFBundleName: Witness Widget
-        CFBundleDisplayName: Witness
+        CFBundleName: DataStamp Widget
+        CFBundleDisplayName: DataStamp
         CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleShortVersionString: $(MARKETING_VERSION)
@@ -143,16 +143,16 @@ targets:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
-  WitnessTests:
+  DataStampTests:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - path: WitnessTests
+      - path: DataStampTests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.makiavel.witness.tests
-        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Witness.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Witness
+        PRODUCT_BUNDLE_IDENTIFIER: com.makiavel.datestamp.tests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/DataStamp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DataStamp
         BUNDLE_LOADER: $(TEST_HOST)
         GENERATE_INFOPLIST_FILE: true
     dependencies:
-      - target: Witness
+      - target: DataStamp
