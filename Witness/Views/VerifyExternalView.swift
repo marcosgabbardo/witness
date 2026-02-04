@@ -475,7 +475,7 @@ struct VerifyExternalView: View {
             }
             
             try FileManager.default.copyItem(at: otsURL, to: tempOtsURL)
-            let otsData = try Data(contentsOf: tempOtsURL)
+            var otsData = try Data(contentsOf: tempOtsURL)
             
             // If we have original file, compute its hash
             var hashData: Data
@@ -495,7 +495,21 @@ struct VerifyExternalView: View {
                 }
             }
             
-            verificationResult = try await otsService.verifyTimestamp(otsData: otsData, originalHash: hashData)
+            // First try to verify
+            var result = try await otsService.verifyTimestamp(otsData: otsData, originalHash: hashData)
+            
+            // If pending, try to upgrade automatically
+            if result.isPending {
+                if let upgradedOts = await otsService.upgradeFromPendingOts(
+                    pendingOtsData: otsData,
+                    originalHash: hashData
+                ) {
+                    // Re-verify with upgraded proof
+                    result = try await otsService.verifyTimestamp(otsData: upgradedOts, originalHash: hashData)
+                }
+            }
+            
+            verificationResult = result
         } catch {
             self.error = error.localizedDescription
         }
