@@ -27,6 +27,7 @@
 		A7E0334057FD4C7BD2732688 /* DataStampShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9229ACAF52648551239A2122 /* DataStampShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A9C5E3FA83B9E2ADC1960770 /* DataStampApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D46DD7D37CD474789B778C /* DataStampApp.swift */; };
 		B7F91BA3C66A2F9168F78B0A /* CreateTimestampView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09B3138AB49EA8EFEA4EAD25 /* CreateTimestampView.swift */; };
+		4EF98F1965004E0596FD3EDB /* BatchTimestampView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51138E403E2F42BFA2597233 /* BatchTimestampView.swift */; };
 		B8BCF0E8576FC01ACAF2E2CD /* OpenTimestampsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75D531BB67F4524C89B1679 /* OpenTimestampsService.swift */; };
 		CEC9B7B55F4063E3A41AED62 /* StorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35F62BD59B7ACDDDEA5D31A /* StorageService.swift */; };
 		D3C51ED6E00F0A393A3D0B75 /* MerkleVerifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A0402255BA4F935CECDB7F3 /* MerkleVerifier.swift */; };
@@ -81,6 +82,7 @@
 /* Begin PBXFileReference section */
 		03EF5878E3E86CC4BAC7377B /* CloudKitSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSyncService.swift; sourceTree = "<group>"; };
 		09B3138AB49EA8EFEA4EAD25 /* CreateTimestampView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTimestampView.swift; sourceTree = "<group>"; };
+		51138E403E2F42BFA2597233 /* BatchTimestampView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchTimestampView.swift; sourceTree = "<group>"; };
 		0D1F233ADC2DE0FC180E0B04 /* WidgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetService.swift; sourceTree = "<group>"; };
 		11DD77686E039907A6D5C151 /* VerifyExternalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifyExternalView.swift; sourceTree = "<group>"; };
 		208658C04C1D654FCD09E291 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -246,6 +248,7 @@
 			isa = PBXGroup;
 			children = (
 				09B3138AB49EA8EFEA4EAD25 /* CreateTimestampView.swift */,
+				51138E403E2F42BFA2597233 /* BatchTimestampView.swift */,
 				50B5D36AF86A625DABC9F130 /* FolderListView.swift */,
 				F0415E69BC29882B47E1094F /* FolderPickerView.swift */,
 				F30C8B9CB72832C776E8E9F3 /* ItemDetailView.swift */,
@@ -412,6 +415,7 @@
 				2CBD7252C4740391016D55B3 /* CloudKitSyncService.swift in Sources */,
 				F7544170E983F75B33471ACA /* ContentView.swift in Sources */,
 				B7F91BA3C66A2F9168F78B0A /* CreateTimestampView.swift in Sources */,
+				4EF98F1965004E0596FD3EDB /* BatchTimestampView.swift in Sources */,
 				A9C5E3FA83B9E2ADC1960770 /* DataStampApp.swift in Sources */,
 				1FE825FA8AB870507A51D4F4 /* DataStampIntents.swift in Sources */,
 				076D0EB262333119420BA642 /* DataStampItem.swift in Sources */,

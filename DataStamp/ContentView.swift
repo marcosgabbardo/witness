@@ -10,6 +10,7 @@ struct ContentView: View {
     
     @State private var datestampManager = DataStampManager()
     @State private var showingCreateSheet = false
+    @State private var showingBatchSheet = false
     @State private var showingOnboarding = false
     @State private var showingSettings = false
     @State private var showingVerify = false
@@ -113,6 +114,9 @@ struct ContentView: View {
             .sheet(isPresented: $showingCreateSheet) {
                 CreateTimestampView(manager: datestampManager)
             }
+            .sheet(isPresented: $showingBatchSheet) {
+                BatchTimestampView(manager: datestampManager)
+            }
             .sheet(item: $selectedItem) { item in
                 ItemDetailView(item: item, manager: datestampManager)
             }
@@ -161,17 +165,29 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             
-            Button {
-                showingCreateSheet = true
-            } label: {
-                Label("Create Timestamp", systemImage: "plus")
-                    .font(.headline)
-                    .padding()
-                    .background(Color.accentColor)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            VStack(spacing: 12) {
+                Button {
+                    showingCreateSheet = true
+                } label: {
+                    Label("Create Timestamp", systemImage: "plus")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.accentColor)
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                
+                Button {
+                    showingBatchSheet = true
+                } label: {
+                    Label("Batch Timestamp", systemImage: "square.stack.3d.up")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.accentColor)
+                }
             }
             .padding(.top)
+            .frame(maxWidth: 250)
         }
         .padding()
     }
@@ -315,8 +331,18 @@ struct ContentView: View {
     }
     
     private var createButton: some View {
-        Button {
-            showingCreateSheet = true
+        Menu {
+            Button {
+                showingCreateSheet = true
+            } label: {
+                Label("Single Timestamp", systemImage: "plus")
+            }
+            
+            Button {
+                showingBatchSheet = true
+            } label: {
+                Label("Batch Timestamp", systemImage: "square.stack.3d.up")
+            }
         } label: {
             Image(systemName: "plus")
                 .font(.title2)
