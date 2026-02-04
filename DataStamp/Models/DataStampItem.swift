@@ -133,7 +133,7 @@ final class DataStampItem {
     var notes: String?
     
     // MARK: - Organization
-    var tags: [String]
+    var tags: [String] = []
     var folder: Folder?
     
     // MARK: - Status

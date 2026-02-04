@@ -66,25 +66,11 @@ struct TagsEditorView: View {
                 // Suggestions
                 if !suggestedTags.isEmpty {
                     Section("Suggestions") {
-                        FlowLayout(spacing: 8) {
-                            ForEach(suggestedTags.prefix(12), id: \.self) { tag in
-                                Button {
-                                    addTag(tag)
-                                } label: {
-                                    HStack(spacing: 4) {
-                                        if let predefined = PredefinedTag(rawValue: tag) {
-                                            Image(systemName: predefined.icon)
-                                                .font(.caption)
-                                        }
-                                        Text(tag)
-                                            .font(.subheadline)
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(colorForTag(tag).opacity(0.15))
-                                    .foregroundStyle(colorForTag(tag))
-                                    .clipShape(Capsule())
-                                }
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 8) {
+                            ForEach(Array(suggestedTags.prefix(12).enumerated()), id: \.offset) { index, tag in
+                                SuggestionTagButton(tag: tag, onAdd: {
+                                    addSingleTag(tag)
+                                })
                             }
                         }
                         .padding(.vertical, 8)
@@ -106,8 +92,18 @@ struct TagsEditorView: View {
     private func addTag(_ tag: String) {
         let trimmed = tag.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, !item.tags.contains(trimmed) else { return }
-        item.tags.append(trimmed)
+        var newTags = item.tags
+        newTags.append(trimmed)
+        item.tags = newTags
         newTag = ""
+    }
+    
+    private func addSingleTag(_ tag: String) {
+        let trimmed = tag.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, !item.tags.contains(trimmed) else { return }
+        var newTags = item.tags
+        newTags.append(trimmed)
+        item.tags = newTags
     }
     
     private func removeTags(at offsets: IndexSet) {
@@ -119,6 +115,42 @@ struct TagsEditorView: View {
             return predefined.color
         }
         // Generate consistent color from tag name
+        let hash = abs(tag.hashValue)
+        let colors: [Color] = [.blue, .green, .purple, .pink, .orange, .mint, .teal, .indigo]
+        return colors[hash % colors.count]
+    }
+}
+
+// MARK: - Suggestion Tag Button
+
+struct SuggestionTagButton: View {
+    let tag: String
+    let onAdd: () -> Void
+    
+    var body: some View {
+        Button(action: onAdd) {
+            HStack(spacing: 4) {
+                if let predefined = PredefinedTag(rawValue: tag) {
+                    Image(systemName: predefined.icon)
+                        .font(.caption)
+                }
+                Text(tag)
+                    .font(.subheadline)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .background(colorForTag(tag).opacity(0.15))
+            .foregroundStyle(colorForTag(tag))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private func colorForTag(_ tag: String) -> Color {
+        if let predefined = PredefinedTag(rawValue: tag) {
+            return predefined.color
+        }
         let hash = abs(tag.hashValue)
         let colors: [Color] = [.blue, .green, .purple, .pink, .orange, .mint, .teal, .indigo]
         return colors[hash % colors.count]
