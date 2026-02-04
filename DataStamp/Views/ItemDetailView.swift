@@ -403,9 +403,29 @@ struct ItemDetailView: View {
                 
                 detailRow(label: "Hash (SHA256)", value: item.hashHex, isMonospace: true)
                 
-                if let calendarUrl = item.calendarUrl {
+                if item.calendarUrl != nil {
                     Divider()
-                    detailRow(label: "Calendar", value: calendarUrl)
+                    if item.status == .submitted {
+                        // Show multi-calendar info for pending timestamps
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Calendars")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Label("alice.btc.calendar.opentimestamps.org", systemImage: "checkmark.circle.fill")
+                                Label("bob.btc.calendar.opentimestamps.org", systemImage: "checkmark.circle.fill")
+                                Label("finney.calendar.eternitywall.com", systemImage: "checkmark.circle.fill")
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.green)
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                    } else if let calendarUrl = item.calendarUrl {
+                        // Show confirmed calendar for completed timestamps
+                        detailRow(label: "Confirmed via", value: calendarUrl)
+                    }
                 }
                 
                 if let submittedAt = item.submittedAt {

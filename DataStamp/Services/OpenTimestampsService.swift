@@ -89,21 +89,46 @@ actor OpenTimestampsService {
     
     /// Submit a hash to OpenTimestamps calendars
     /// Returns incomplete .ots data that can be upgraded later
+    /// Submits to ALL calendars in parallel for redundancy, returns first success
     func submitHash(_ hash: Data) async throws -> (otsData: Data, calendarUrl: String) {
-        // Try each calendar until one succeeds
-        var lastError: Error?
+        // Submit to ALL calendars in parallel for redundancy
+        let results = await submitToAllCalendars(hash: hash)
         
-        for calendar in OTSCalendar.allCases {
-            do {
-                let otsData = try await submitToCalendar(hash: hash, calendar: calendar)
-                return (otsData, calendar.rawValue)
-            } catch {
-                lastError = error
-                continue
+        // Return first successful submission
+        if let first = results.first {
+            print("📤 Submitted to \(results.count)/\(OTSCalendar.allCases.count) calendars")
+            for r in results {
+                print("   ✅ \(r.calendarUrl)")
             }
+            return (first.otsData, first.calendarUrl)
         }
         
-        throw lastError ?? OTSError.calendarUnavailable
+        throw OTSError.calendarUnavailable
+    }
+    
+    /// Submit to all calendars in parallel, return all successful submissions
+    func submitToAllCalendars(hash: Data) async -> [(otsData: Data, calendarUrl: String)] {
+        await withTaskGroup(of: (otsData: Data, calendarUrl: String)?.self) { group in
+            for calendar in OTSCalendar.allCases {
+                group.addTask {
+                    do {
+                        let otsData = try await self.submitToCalendar(hash: hash, calendar: calendar)
+                        return (otsData, calendar.rawValue)
+                    } catch {
+                        print("   ❌ Failed to submit to \(calendar.rawValue): \(error.localizedDescription)")
+                        return nil
+                    }
+                }
+            }
+            
+            var results: [(otsData: Data, calendarUrl: String)] = []
+            for await result in group {
+                if let r = result {
+                    results.append(r)
+                }
+            }
+            return results
+        }
     }
     
     /// Try to upgrade a pending timestamp to a complete one with Bitcoin attestation
@@ -153,18 +178,40 @@ actor OpenTimestampsService {
         }
     }
     
-    /// Try to upgrade from all known calendars (in case original calendar is down)
+    /// Try to upgrade from all known calendars in PARALLEL
+    /// Returns the first one that has Bitcoin attestation
     func upgradeTimestampFromAnyCalendar(hash: Data) async -> Data? {
-        for calendar in OTSCalendar.allCases {
-            do {
-                if let upgraded = try await upgradeTimestamp(hash: hash, calendarUrl: calendar.rawValue) {
-                    return upgraded
+        print("🔄 Trying upgrade from all \(OTSCalendar.allCases.count) calendars in parallel...")
+        
+        // Use TaskGroup to try all calendars in parallel
+        // Return as soon as one succeeds with Bitcoin attestation
+        return await withTaskGroup(of: (calendar: String, data: Data?)?.self) { group in
+            for calendar in OTSCalendar.allCases {
+                group.addTask {
+                    do {
+                        if let upgraded = try await self.upgradeTimestamp(hash: hash, calendarUrl: calendar.rawValue) {
+                            return (calendar.rawValue, upgraded)
+                        }
+                        return (calendar.rawValue, nil)
+                    } catch {
+                        return nil
+                    }
                 }
-            } catch {
-                continue // Try next calendar
             }
+            
+            // Return first successful upgrade with Bitcoin attestation
+            for await result in group {
+                if let r = result, let data = r.data {
+                    print("   ✅ Got Bitcoin attestation from \(r.calendar)")
+                    // Cancel remaining tasks (they're no longer needed)
+                    group.cancelAll()
+                    return data
+                }
+            }
+            
+            print("   ⏳ No calendar has Bitcoin attestation yet")
+            return nil
         }
-        return nil
     }
     
     /// Try to upgrade using the pending OTS data directly
