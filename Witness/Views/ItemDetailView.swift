@@ -18,7 +18,6 @@ struct ItemDetailView: View {
     @State private var isGeneratingPDF = false
     @State private var error: Error?
     @State private var showingError = false
-    @State private var showingMerkleTree = false
     @State private var merkleTreeData: MerkleTreeData?
     
     private let merkleVerifier = MerkleVerifier()
@@ -105,17 +104,15 @@ struct ItemDetailView: View {
             } message: {
                 Text(error?.localizedDescription ?? "Unknown error")
             }
-            .sheet(isPresented: $showingMerkleTree) {
-                if let data = merkleTreeData {
-                    MerkleTreeView(
-                        originalHash: data.originalHash,
-                        computedHash: data.computedHash,
-                        operations: data.operations,
-                        pendingCalendars: data.pendingCalendars,
-                        blockHeight: item.bitcoinBlockHeight,
-                        blockTime: item.bitcoinBlockTime
-                    )
-                }
+            .sheet(item: $merkleTreeData) { data in
+                MerkleTreeView(
+                    originalHash: data.originalHash,
+                    computedHash: data.computedHash,
+                    operations: data.operations,
+                    pendingCalendars: data.pendingCalendars,
+                    blockHeight: item.bitcoinBlockHeight,
+                    blockTime: item.bitcoinBlockTime
+                )
             }
             .task {
                 if item.contentType == .photo {
@@ -513,7 +510,6 @@ struct ItemDetailView: View {
                 operations: proof.operations,
                 pendingCalendars: pendingCalendars
             )
-            showingMerkleTree = true
         } catch {
             self.error = error
             showingError = true
@@ -523,7 +519,8 @@ struct ItemDetailView: View {
 
 // MARK: - Supporting Types
 
-struct MerkleTreeData {
+struct MerkleTreeData: Identifiable {
+    let id = UUID()
     let originalHash: String
     let computedHash: String
     let operations: [OTSOperation]
